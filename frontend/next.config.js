@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',
+  images: { unoptimized: true },
   webpack: (config) => {
     config.experiments = { ...config.experiments, asyncWebAssembly: true };
     // fhenixjs uses Node crypto — keep server-side only
