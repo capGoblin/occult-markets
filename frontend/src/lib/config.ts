@@ -1,6 +1,6 @@
 import { arbitrumSepolia } from "viem/chains";
 
-export const CONTRACT_ADDRESS = "0x77Ba761C7C14355d39299252f35D469141D52Bdd" as `0x${string}`;
+export const CONTRACT_ADDRESS = "0xd8fE03483eBD70FbFc4b007cb98Bf090e7C5fc70" as `0x${string}`;
 
 export const targetNetwork = arbitrumSepolia;
 

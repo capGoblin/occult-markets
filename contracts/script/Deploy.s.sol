@@ -13,8 +13,8 @@ contract Deploy is Script {
         console.log("OccultMarket deployed to:", address(market));
 
         uint256 marketId = market.createMarket(
-            "Will ETH hit $4000 before June 1 2025?",
-            60 days
+            "Will ETH hit $4000 before June 1 2026?",
+            427 days // roughly until June 1 2026 from now
         );
         console.log("Market created, id:", marketId);
         console.log("Initial price: 500 (50/50)");

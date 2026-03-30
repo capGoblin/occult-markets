@@ -6,7 +6,8 @@ const nextConfig = {
     config.resolve.fallback = { 
       ...config.resolve.fallback, 
       fs: false, 
-      "@react-native-async-storage/async-storage": false 
+      "@react-native-async-storage/async-storage": false,
+      "pino-pretty": false 
     };
     return config;
   },

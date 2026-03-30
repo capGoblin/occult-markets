@@ -4,6 +4,7 @@ import { createCofheConfig, createCofheClient } from '@cofhe/sdk/web';
 import { Encryptable } from '@cofhe/sdk';
 import { chains } from '@cofhe/sdk/chains';
 import { WagmiAdapter } from '@cofhe/sdk/adapters';
+import { CONTRACT_ADDRESS } from '@/lib/config';
 
 /**
  * Matches the InEuint / InEbool structs in FHE.sol
@@ -44,13 +45,13 @@ export async function processFheBet(
   const [encryptedDirection, encryptedAmount] = await client
     .encryptInputs([
       Encryptable.bool(direction),
-      Encryptable.uint32(amountGwei)
+      Encryptable.uint64(amountGwei)
     ])
     .execute();
 
   // Route the write payload natively through the intercepted Wagmi Adapter wallet client
   const txHash = await wc.writeContract({
-    address: "0x77Ba761C7C14355d39299252f35D469141D52Bdd" as `0x${string}`,
+    address: CONTRACT_ADDRESS,
     abi: require("./abi").OCCULT_MARKET_ABI,
     functionName: "placeBet",
     args: [

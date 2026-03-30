@@ -8,10 +8,11 @@ import { decryptHandle } from "@/lib/cofhe";
 
 interface Props { marketId: bigint }
 
+// Unified Overrides for Arbitrum Sepolia & CoFHE simulation bypass
 const GAS_PARAMS = {
   gas: BigInt(2000000),
-  maxFeePerGas: BigInt(500000000), // 0.5 gwei
-  maxPriorityFeePerGas: BigInt(500000000),
+  maxFeePerGas: BigInt(30000000), // 0.03 gwei minimum or higher for Sepolia
+  maxPriorityFeePerGas: BigInt(30000000),
 };
 
 export function MarketCard({ marketId }: Props) {
@@ -55,29 +56,28 @@ export function MarketCard({ marketId }: Props) {
     try {
       setIsDecrypting(true);
 
-      // Step 2: Decrypt off-chain
+      // Decrypt off-chain
       const yesRes = await decryptHandle(yesSnap, publicClient, walletClient);
       const noRes = await decryptHandle(noSnap, publicClient, walletClient);
 
-      // Step 3: Publish results on-chain with proofs
+      // Publish results on-chain with proofs
       const publishTx = await writeContractAsync({
         address: CONTRACT_ADDRESS,
         abi: OCCULT_MARKET_ABI,
         functionName: "publishPriceUpdate",
         args: [
           marketId,
-          Number(yesRes.decryptedValue),
+          yesRes.decryptedValue,
           yesRes.signature,
-          Number(noRes.decryptedValue),
+          noRes.decryptedValue,
           noRes.signature
         ],
         ...GAS_PARAMS,
       });
 
-      // Simple wait for publish to be mined (in a robust app, use useWaitForTransactionReceipt asynchronously)
       await publicClient.waitForTransactionReceipt({ hash: publishTx });
 
-      // Step 4: Finalize price
+      // Finalize price
       const finalizeTx = await writeContractAsync({
         address: CONTRACT_ADDRESS,
         abi: OCCULT_MARKET_ABI,
@@ -111,7 +111,7 @@ export function MarketCard({ marketId }: Props) {
         args: [
           marketId,
           address,
-          Number(res.decryptedValue),
+          res.decryptedValue,
           res.signature
         ],
         ...GAS_PARAMS,
@@ -136,7 +136,8 @@ export function MarketCard({ marketId }: Props) {
   };
 
   const nowSec    = BigInt(Math.floor(Date.now() / 1000));
-  const canUpdate = !resolved && !priceUpdatePending && nowSec >= lastPriceUpdate + 600n;
+  // Allow immediate update during testing (ignore 10m wait if needed)
+  const canUpdate = !resolved && !priceUpdatePending && nowSec >= (lastPriceUpdate + BigInt(0)); 
   const yesProb   = currentPrice / 10;
 
   return (
@@ -187,7 +188,7 @@ export function MarketCard({ marketId }: Props) {
               onClick={handleDecryptAndFinalize}
               disabled={isDecrypting || !publicClient || !walletClient}
             >
-              {isDecrypting ? "Decrypting..." : "Decrypt & Finalize Price"}
+              {isDecrypting ? "Syncing..." : "Sync Discovery (%)"}
             </button>
           )}
         </div>
@@ -212,6 +213,7 @@ export function MarketCard({ marketId }: Props) {
                   abi: OCCULT_MARKET_ABI,
                   functionName: "requestClaim",
                   args: [marketId],
+                  ...GAS_PARAMS,
                 });
                 await publicClient?.waitForTransactionReceipt({ hash: tx });
                 refetchPos();
@@ -239,7 +241,7 @@ export function MarketCard({ marketId }: Props) {
 
       <div className="market-footer">
         <span className="market-id">Market #{marketId.toString()}</span>
-        {priceUpdatePending && <span className="pending-badge">Price update pending…</span>}
+        {priceUpdatePending && <span className="pending-badge">Syncing Price Proof…</span>}
       </div>
     </div>
   );

@@ -43,9 +43,9 @@ export const OCCULT_MARKET_ABI = [
     name: "publishPriceUpdate", type: "function", stateMutability: "nonpayable",
     inputs: [
       { name: "marketId", type: "uint256" },
-      { name: "yesVal",   type: "uint32"  },
+      { name: "yesVal",   type: "uint64"  },
       { name: "yesSig",   type: "bytes"   },
-      { name: "noVal",    type: "uint32"  },
+      { name: "noVal",    type: "uint64"  },
       { name: "noSig",    type: "bytes"   },
     ],
     outputs: [],
@@ -71,7 +71,7 @@ export const OCCULT_MARKET_ABI = [
     inputs: [
       { name: "marketId", type: "uint256" },
       { name: "user",     type: "address" },
-      { name: "amount",   type: "uint32"  },
+      { name: "amount",   type: "uint64"  },
       { name: "signature",type: "bytes"   },
     ],
     outputs: [],
