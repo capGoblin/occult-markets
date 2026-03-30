@@ -8,8 +8,26 @@ export const OCCULT_MARKET_ABI = [
     name: "placeBet", type: "function", stateMutability: "payable",
     inputs: [
       { name: "marketId", type: "uint256" },
-      { name: "encryptedDirection", type: "tuple", components: [{ name: "ctHash", type: "uint256" }] },
-      { name: "encryptedAmount",    type: "tuple", components: [{ name: "ctHash", type: "uint256" }] },
+      {
+        name: "encryptedDirection",
+        type: "tuple",
+        components: [
+          { name: "ctHash", type: "uint256" },
+          { name: "securityZone", type: "uint8" },
+          { name: "utype", type: "uint8" },
+          { name: "signature", type: "bytes" },
+        ]
+      },
+      {
+        name: "encryptedAmount",
+        type: "tuple",
+        components: [
+          { name: "ctHash", type: "uint256" },
+          { name: "securityZone", type: "uint8" },
+          { name: "utype", type: "uint8" },
+          { name: "signature", type: "bytes" },
+        ]
+      },
     ],
     outputs: [],
   },

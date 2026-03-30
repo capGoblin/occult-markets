@@ -8,6 +8,12 @@ import { decryptHandle } from "@/lib/cofhe";
 
 interface Props { marketId: bigint }
 
+const GAS_PARAMS = {
+  gas: BigInt(2000000),
+  maxFeePerGas: BigInt(500000000), // 0.5 gwei
+  maxPriorityFeePerGas: BigInt(500000000),
+};
+
 export function MarketCard({ marketId }: Props) {
   const [showBetForm, setShowBetForm] = useState(false);
   const [isDecrypting, setIsDecrypting] = useState(false);
@@ -65,6 +71,7 @@ export function MarketCard({ marketId }: Props) {
           Number(noRes.decryptedValue),
           noRes.signature
         ],
+        ...GAS_PARAMS,
       });
 
       // Simple wait for publish to be mined (in a robust app, use useWaitForTransactionReceipt asynchronously)
@@ -76,6 +83,7 @@ export function MarketCard({ marketId }: Props) {
         abi: OCCULT_MARKET_ABI,
         functionName: "finalizePrice",
         args: [marketId],
+        ...GAS_PARAMS,
       });
       await publicClient.waitForTransactionReceipt({ hash: finalizeTx });
 
@@ -106,6 +114,7 @@ export function MarketCard({ marketId }: Props) {
           Number(res.decryptedValue),
           res.signature
         ],
+        ...GAS_PARAMS,
       });
       await publicClient.waitForTransactionReceipt({ hash: publishTx });
 
@@ -114,6 +123,7 @@ export function MarketCard({ marketId }: Props) {
         abi: OCCULT_MARKET_ABI,
         functionName: "finalizeClaim",
         args: [marketId],
+        ...GAS_PARAMS,
       });
       await publicClient.waitForTransactionReceipt({ hash: finalizeTx });
 
@@ -164,6 +174,7 @@ export function MarketCard({ marketId }: Props) {
               onClick={() => reqUpdate({
                 address: CONTRACT_ADDRESS, abi: OCCULT_MARKET_ABI,
                 functionName: "requestPriceUpdate", args: [marketId],
+                ...GAS_PARAMS,
               })}
             >
               Request Price Update

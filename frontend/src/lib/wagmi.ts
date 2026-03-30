@@ -1,8 +1,10 @@
 import { createConfig, http } from "wagmi";
-import { fhenixTestnet } from "./config";
+import { injected } from "wagmi/connectors";
+import { targetNetwork } from "./config";
 
 export const wagmiConfig = createConfig({
-  chains: [fhenixTestnet],
-  transports: { [fhenixTestnet.id]: http() },
+  chains: [targetNetwork],
+  connectors: [injected()],
+  transports: { [targetNetwork.id]: http() },
   ssr: true,
 });

@@ -4,8 +4,8 @@ import { injected } from "wagmi/connectors";
 
 export function WalletButton() {
   const { address, isConnected } = useAccount();
-  const { connect }    = useConnect();
-  const { disconnect } = useDisconnect();
+  const { connect, connectors }  = useConnect();
+  const { disconnect }           = useDisconnect();
 
   if (isConnected && address) {
     return (
@@ -15,7 +15,7 @@ export function WalletButton() {
     );
   }
   return (
-    <button className="wallet-btn" onClick={() => connect({ connector: injected() })}>
+    <button className="wallet-btn" onClick={() => connect({ connector: connectors[0] })}>
       Connect Wallet
     </button>
   );

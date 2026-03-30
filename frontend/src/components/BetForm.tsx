@@ -4,7 +4,7 @@ import { useWriteContract, useWaitForTransactionReceipt, useAccount, usePublicCl
 import { parseEther } from "viem";
 import { OCCULT_MARKET_ABI } from "@/lib/abi";
 import { CONTRACT_ADDRESS } from "@/lib/config";
-import { encryptBet } from "@/lib/cofhe";
+import { processFheBet } from "@/lib/cofhe";
 
 interface Props {
   marketId:     bigint;
@@ -21,7 +21,7 @@ export function BetForm({ marketId, currentPrice, onSuccess }: Props) {
   const [encrypting, setEncrypting]    = useState(false);
   const [error, setError]              = useState<string | null>(null);
 
-  const { writeContract, data: txHash } = useWriteContract();
+  const [txHash, setTxHash]            = useState<`0x${string}` | undefined>();
   const { isLoading: isTxPending, isSuccess } = useWaitForTransactionReceipt({ hash: txHash });
 
   if (isSuccess) onSuccess();
@@ -40,22 +40,19 @@ export function BetForm({ marketId, currentPrice, onSuccess }: Props) {
 
     try {
       const amountWei  = parseEther(ethAmount);
-      const amountGwei = amountWei / 1_000_000_000n;
+      const amountGwei = amountWei / BigInt(1000000000);
 
-      const { encryptedDirection, encryptedAmount } = await encryptBet(
+      const hash = await processFheBet(
+        marketId,
         direction,
         amountGwei,
+        amountWei,
+        address,
         publicClient,
         walletClient
       );
 
-      writeContract({
-        address: CONTRACT_ADDRESS,
-        abi: OCCULT_MARKET_ABI,
-        functionName: "placeBet",
-        args: [marketId, encryptedDirection, encryptedAmount],
-        value: amountWei,
-      });
+      setTxHash(hash);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Encryption failed");
     } finally {
