@@ -1,0 +1,105 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #0a0a0f;
+  --bg-card:    #111118;
+  --bg-card2:   #16161f;
+  --border:     #1e1e2e;
+  --accent:     #7c3aed;
+  --accent-dim: #4c1d95;
+  --yes:        #10b981;
+  --no:         #ef4444;
+  --text:       #e2e8f0;
+  --text-muted: #64748b;
+  --radius:     12px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+body { min-height: 100vh; }
+
+.app { max-width: 900px; margin: 0 auto; padding: 0 16px 64px; }
+
+/* Header */
+.app-header { padding: 32px 0 24px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+.header-content { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.logo { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+.tagline { display: block; font-size: 13px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
+.header-explainer { display: flex; gap: 24px; flex-wrap: wrap; }
+.explainer-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
+
+/* Wallet */
+.wallet-btn { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--text); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: background 0.15s; }
+.wallet-btn:hover { background: var(--accent); }
+.wallet-btn.connected { background: transparent; }
+
+/* Markets */
+.markets-grid { display: flex; flex-direction: column; gap: 24px; }
+
+/* Market card */
+.market-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+.market-card.resolved { opacity: 0.7; }
+.market-card.loading { height: 200px; }
+.market-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.market-question { font-size: 17px; font-weight: 600; line-height: 1.4; flex: 1; }
+.market-status { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; background: var(--bg-card2); border: 1px solid var(--border); color: var(--text-muted); }
+.market-status.resolved { background: var(--accent-dim); border-color: var(--accent); color: var(--text); }
+
+/* Price bar */
+.price-display { margin-bottom: 16px; }
+.price-bar-container { height: 8px; background: var(--no); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+.price-bar-yes { height: 100%; background: var(--yes); transition: width 0.4s ease; }
+.price-labels { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; }
+.yes-label { color: var(--yes); }
+.no-label  { color: var(--no); }
+
+/* Privacy note */
+.privacy-note { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; padding: 8px 12px; background: var(--bg-card2); border-radius: 6px; border-left: 3px solid var(--accent); }
+
+/* Buttons */
+.market-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.btn-primary { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: opacity 0.15s; }
+.btn-primary:hover:not(:disabled) { opacity: 0.85; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: border-color 0.15s; }
+.btn-secondary:hover:not(:disabled) { border-color: var(--accent); }
+.btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Footer row */
+.market-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; font-size: 12px; color: var(--text-muted); }
+.pending-badge { color: var(--accent); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+/* Bet form */
+.bet-form { margin-top: 16px; padding: 20px; background: var(--bg-card2); border: 1px solid var(--border); border-radius: 10px; }
+.bet-form h3 { font-size: 15px; margin-bottom: 8px; }
+.bet-form-note { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5; }
+.direction-selector { display: flex; gap: 10px; margin-bottom: 14px; }
+.direction-btn { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.15s; }
+.direction-btn.yes:hover, .direction-btn.yes.selected { background: rgba(16,185,129,0.15); border-color: var(--yes); color: var(--yes); }
+.direction-btn.no:hover,  .direction-btn.no.selected  { background: rgba(239,68,68,0.15);  border-color: var(--no);  color: var(--no);  }
+.amount-input { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.amount-input input { flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px 14px; border-radius: 8px; font-size: 15px; }
+.amount-input input:focus { outline: none; border-color: var(--accent); }
+.currency { font-size: 14px; color: var(--text-muted); min-width: 30px; }
+.payout-estimate { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+.payout-estimate strong { color: var(--text); }
+.payout-note { font-size: 11px; }
+.error-msg { color: var(--no); font-size: 13px; margin-bottom: 12px; padding: 8px 12px; background: rgba(239,68,68,0.1); border-radius: 6px; }
+.bet-submit { width: 100%; margin-bottom: 12px; }
+.privacy-details details { font-size: 12px; color: var(--text-muted); }
+.privacy-details summary { cursor: pointer; margin-bottom: 6px; }
+.privacy-details ul { padding-left: 16px; line-height: 1.8; }
+
+/* Empty / footer */
+.empty-state { text-align: center; padding: 64px 16px; color: var(--text-muted); }
+.empty-note { font-size: 13px; margin-top: 8px; }
+.app-footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); text-align: center; font-size: 13px; color: var(--text-muted); }
+.app-footer a { color: var(--accent); text-decoration: none; }
+.footer-note { margin-top: 4px; font-size: 12px; }
+
+/* Skeleton */
+.skeleton { height: 100%; background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card2) 50%, var(--bg-card) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius); }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }

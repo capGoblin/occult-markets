@@ -1,0 +1,14 @@
+{
+  "name": "occult-markets-contracts",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test -vvv",
+    "deploy:fhenix": "forge script script/Deploy.s.sol --rpc-url fhenix_testnet --broadcast",
+    "deploy:local": "forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast"
+  },
+  "dependencies": {
+    "@fhenixprotocol/cofhe-contracts": "^0.1.0"
+  }
+}

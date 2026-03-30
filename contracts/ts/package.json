@@ -1,0 +1,22 @@
+{
+  "name": "occult-markets-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "tsx deploy.ts",
+    "interact": "tsx interact.ts",
+    "encrypt-test": "tsx encrypt-test.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "viem": "^2.17.0",
+    "fhenixjs": "^0.3.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  }
+}
