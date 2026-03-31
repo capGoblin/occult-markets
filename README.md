@@ -30,7 +30,7 @@ Not just who bet. The bet.
 
 `yes_pool` and `no_pool` are `euint64` ciphertexts on Fhenix CoFHE. Every trade updates the pools via homomorphic addition on ciphertexts. Nobody — not other traders, not the protocol, not Fhenix nodes — can read pool composition between price updates.
 
-Price updates every N trades (Wave 2+) or every 10 minutes (Wave 1). One number published: the new market price. Individual trades are permanently invisible.
+Price updates every N trades (Wave 2+) or every 10 minutes (Wave 1) or real time???. One number published: the new market price. Individual trades are permanently invisible.
 
 This kills two things simultaneously:
 
@@ -201,7 +201,7 @@ Set `NEXT_PUBLIC_CONTRACT_ADDRESS` in `.env.local` to your deployed contract add
 | Wave | Status | Shipped |
 |------|--------|---------|
 | **Wave 1** | ✅ Done | Encrypted AMM core — `euint64` pools, `placeBet()` with encrypted direction, batched price updates, encrypted claims |
-| **Wave 2** | 🔨 Building | Exits, multiple markets, volume-triggered price updates (15 trades min, 6hr fallback) |
+| **Wave 2** | 🔨 Building | Exits, multiple markets, volume-triggered price updates (15 trades min, 6hr fallback, or read time???) |
 | **Wave 3** | 📋 Planned | Encrypted position history proof, multi-outcome markets (3-5 outcomes), LP mechanics |
 | **Wave 4** | 📋 Planned | Encrypted multi-voter resolution — votes are ciphertexts, FHE tallies, incorrect voters slashed. Encrypted limit orders |
 | **Wave 5** | 📋 Planned | Institutional API. Accuracy comparison vs Polymarket — empirical proof that encrypted pool state produces more accurate prices |
@@ -214,7 +214,7 @@ Set `NEXT_PUBLIC_CONTRACT_ADDRESS` in `.env.local` to your deployed contract add
 
 **LP System:** Initial liquidity depth is fixed. Dynamic LP mechanics with encrypted LP positions ship in Wave 2.
 
-**Price update interval:** Hardcoded 10 minutes. Volume-triggered updates (15 trades minimum, 6-hour fallback) ship in Wave 2.
+**Price update interval:** Hardcoded 10 minutes. Volume-triggered updates (15 trades minimum, 6-hour fallback, or real time???) ship in Wave 2.
 
 ---
 
