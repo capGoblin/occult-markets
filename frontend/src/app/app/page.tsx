@@ -20,7 +20,7 @@ export default function Home() {
       <nav className="app-nav">
         <div className="nav-inner">
           <span className="nav-logo">
-            OCCULT <span className="nav-dot">●</span>
+            OCCULT<span className="nav-cursor">_</span>
           </span>
           <WalletButton />
         </div>

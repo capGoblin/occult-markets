@@ -12,12 +12,31 @@ contract Deploy is Script {
         market = new OccultMarket();
         console.log("OccultMarket deployed to:", address(market));
 
-        uint256 marketId = market.createMarket(
-            "Will ETH hit $4000 before June 1 2026?",
-            427 days // roughly until June 1 2026 from now
+        uint256 m1 = market.createMarket(
+            "Will ETH hit $4000 before Q3 2026?",
+            400 days
         );
-        console.log("Market created, id:", marketId);
-        console.log("Initial price: 500 (50/50)");
+        console.log("Market created (ETH), id:", m1);
+
+        uint256 m2 = market.createMarket(
+            "OpenAI drops GPT-6 before December 2026?",
+            250 days
+        );
+        console.log("Market created (GPT-6), id:", m2);
+
+        uint256 m3 = market.createMarket(
+            "Will Bitcoin nuke past $100K before Q3 2026 ends?",
+            180 days
+        );
+        console.log("Market created (BTC), id:", m3);
+
+        uint256 m4 = market.createMarket(
+            "AGI achieved before 2030?",
+            1200 days
+        );
+        console.log("Market created (AGI), id:", m4);
+
+        console.log("Initial prices: 500 (50/50)");
 
         vm.stopBroadcast();
 

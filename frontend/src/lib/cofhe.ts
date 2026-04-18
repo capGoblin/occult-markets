@@ -42,22 +42,20 @@ export async function processFheBet(
 ): Promise<`0x${string}`> {
   const { client, wc } = await getCofheClient(publicClient, walletClient);
 
-  const [encryptedDirection, encryptedAmount] = await client
+  const [encryptedDirection] = await client
     .encryptInputs([
       Encryptable.bool(direction),
-      Encryptable.uint64(amountGwei)
     ])
     .execute();
 
   // Route the write payload natively through the intercepted Wagmi Adapter wallet client
   const txHash = await wc.writeContract({
     address: CONTRACT_ADDRESS,
-    abi: require("./abi").OCCULT_MARKET_ABI,
+    abi: (require("./abi") as any).OCCULT_MARKET_ABI,
     functionName: "placeBet",
     args: [
       marketId,
       encryptedDirection as unknown as EncryptedInput,
-      encryptedAmount as unknown as EncryptedInput
     ],
     value: amountWei,
     account: account,

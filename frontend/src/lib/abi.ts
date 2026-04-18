@@ -18,16 +18,6 @@ export const OCCULT_MARKET_ABI = [
           { name: "signature", type: "bytes" },
         ]
       },
-      {
-        name: "encryptedAmount",
-        type: "tuple",
-        components: [
-          { name: "ctHash", type: "uint256" },
-          { name: "securityZone", type: "uint8" },
-          { name: "utype", type: "uint8" },
-          { name: "signature", type: "bytes" },
-        ]
-      },
     ],
     outputs: [],
   },

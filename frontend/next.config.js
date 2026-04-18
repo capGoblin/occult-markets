@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   webpack: (config) => {
-    config.experiments = { ...config.experiments, asyncWebAssembly: true };
+    config.experiments = { ...config.experiments, asyncWebAssembly: true, layers: true };
     // fhenixjs uses Node crypto — keep server-side only
     config.resolve.fallback = { 
       ...config.resolve.fallback, 

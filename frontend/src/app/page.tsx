@@ -1,846 +1,482 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { AsciiSphere } from '@/components/AsciiSphere';
 
-function useReveal(threshold = 0.15) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(false)
+/* ─── Shared hooks ──────────────────────────── */
+
+const SCRAMBLE_CHARS = '!@#$%^&*[]{}ABCDEFGHabcdefgh0123456789/\\<>?';
+
+function useScramble(target: string, duration = 800, active = true) {
+  const [display, setDisplay] = useState(target);
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) setVisible(true) },
-      { threshold }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [threshold])
-  return { ref, visible }
+    if (!active) return;
+    setDisplay(Array.from(target, () => SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)]).join(''));
+    const start = Date.now();
+    const iv = setInterval(() => {
+      const p = Math.min((Date.now() - start) / duration, 1);
+      const locked = Math.floor(p * target.length);
+      setDisplay(
+        target.slice(0, locked) +
+        Array.from({ length: target.length - locked }, () =>
+          Math.random() < 0.08
+            ? SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)]
+            : target[locked + Math.floor(Math.random() * (target.length - locked))] ?? SCRAMBLE_CHARS[0]
+        ).join('')
+      );
+      if (p >= 1) clearInterval(iv);
+    }, 50);
+    return () => clearInterval(iv);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, duration, active]);
+  return display;
 }
 
-function Reveal({
-  children,
-  className = '',
-  delay = 0,
-  style = {},
-}: {
-  children: React.ReactNode
-  className?: string
-  delay?: number
-  style?: React.CSSProperties
-}) {
-  const { ref, visible } = useReveal()
-  return (
-    <div
-      ref={ref}
-      className={className}
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(20px)',
-        transition: `opacity 500ms ease-out ${delay}ms, transform 500ms ease-out ${delay}ms`,
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  )
+function useInView(options?: IntersectionObserverInit) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setInView(true); obs.disconnect(); }
+    }, options);
+    obs.observe(el);
+    return () => obs.disconnect();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return { ref, inView };
 }
+
+function useTypewriter(text: string, speed = 18, active = false) {
+  const [displayed, setDisplayed] = useState('');
+  useEffect(() => {
+    if (!active) return;
+    setDisplayed('');
+    let i = 0;
+    const t = setInterval(() => { setDisplayed(text.slice(0, ++i)); if (i >= text.length) clearInterval(t); }, speed);
+    return () => clearInterval(t);
+  }, [active, text, speed]);
+  return { text: displayed, done: displayed.length >= text.length };
+}
+
+/* ─── Nav ───────────────────────────────────── */
 
 function Nav() {
-  const [loaded, setLoaded] = useState(false)
-
-  useEffect(() => {
-    const t = setTimeout(() => setLoaded(true), 100)
-    return () => clearTimeout(t)
-  }, [])
-
+  const [loaded, setLoaded] = useState(false);
   const navLinks = [
-    { label: 'Problem', href: '#problem' },
-    { label: 'The Fix', href: '#proof' },
-    { label: 'How It Works', href: '#how-it-works' },
-    { label: 'Built on Fhenix', href: '#fhenix' },
-  ]
+    { label: 'Problem',       href: '#problem'      },
+    { label: 'The Fix',       href: '#proof'        },
+    { label: 'How It Works',  href: '#how-it-works' },
+    { label: 'Built on Fhenix', href: '#fhenix'     },
+  ];
+  useEffect(() => { const t = setTimeout(() => setLoaded(true), 60); return () => clearTimeout(t); }, []);
 
   return (
     <nav style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 100,
-      height: 56,
-      background: 'rgba(8,8,8,0.85)',
-      backdropFilter: 'blur(12px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, height: 56,
+      background: '#000000', borderBottom: '1px solid #333333',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '0 clamp(1.5rem, 4vw, 3rem)',
-      borderBottom: '0.5px solid rgba(255,255,255,0.06)',
+      opacity: loaded ? 1 : 0, transition: 'opacity 300ms',
     }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        opacity: loaded ? 1 : 0,
-        transform: loaded ? 'translateX(0)' : 'translateX(-20px)',
-        transition: 'opacity 300ms ease-out, transform 300ms ease-out',
-      }}>
-        <span style={{
-          fontSize: 13,
-          letterSpacing: '0.35em',
-          fontWeight: 500,
-          color: '#ffffff',
-        }}>OCCULT</span>
-        <span style={{
-          color: '#DC2626',
-          fontSize: 10,
-          animation: 'heartbeat 1.5s ease-in-out infinite',
-        }}>●</span>
-      </div>
+      <span style={{ fontFamily: 'Courier New, monospace', fontSize: 13, letterSpacing: '0.35em', color: '#FFFFFF' }}>
+        OCCULT<span style={{ animation: 'blink-cursor 0.5s steps(1) infinite' }}>_</span>
+      </span>
 
-      <div style={{
-        display: 'flex',
-        gap: '2.5rem',
-        opacity: loaded ? 1 : 0,
-        transform: loaded ? 'translateY(0)' : 'translateY(-10px)',
-        transition: 'opacity 300ms ease-out 80ms, transform 300ms ease-out 80ms',
-      }}>
-        {navLinks.map((link) => (
-          <a
-            key={link.label}
-            href={link.href}
-            style={{
-              fontSize: 13,
-              letterSpacing: '0.12em',
-              color: '#6b7280',
-              textDecoration: 'none',
-              transition: 'color 200ms',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#ffffff')}
-            onMouseLeave={e => (e.currentTarget.style.color = '#6b7280')}
-          >
-            {link.label}
-          </a>
+      <div style={{ display: 'flex', gap: '2.5rem' }}>
+        {navLinks.map(link => (
+          <a key={link.label} href={link.href} style={{
+            fontFamily: 'Courier New, monospace', fontSize: 12, letterSpacing: '0.1em',
+            color: '#666666', textDecoration: 'none', transition: 'color 150ms',
+          }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#FFFFFF')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#666666')}
+          >{link.label}</a>
         ))}
       </div>
 
       <Link href="/app">
-        <button
-          style={{
-            opacity: loaded ? 1 : 0,
-            transform: loaded ? 'translateX(0)' : 'translateX(20px)',
-            transition: 'opacity 300ms ease-out 160ms, transform 300ms ease-out 160ms, background 150ms, color 150ms, border-color 150ms',
-            background: '#ffffff',
-            color: '#000000',
-            border: '1px solid #ffffff',
-            borderRadius: 0,
-            padding: '7px 18px',
-            fontSize: 13,
-            letterSpacing: '0.08em',
-            fontWeight: 500,
-            cursor: 'pointer',
-          }}
-          onMouseEnter={e => {
-            const b = e.currentTarget
-            b.style.background = '#000000'
-            b.style.color = '#ffffff'
-            b.style.borderColor = '#ffffff'
-          }}
-          onMouseLeave={e => {
-            const b = e.currentTarget
-            b.style.background = '#ffffff'
-            b.style.color = '#000000'
-            b.style.borderColor = '#ffffff'
-          }}
-        >
-          Launch App →
-        </button>
+        <button style={{
+          background: '#000000', border: '1px solid #FFFFFF', color: '#FFFFFF',
+          padding: '7px 18px', borderRadius: 0, cursor: 'pointer',
+          fontFamily: 'Courier New, monospace', fontSize: 12, letterSpacing: '0.12em',
+          transition: 'background 150ms, color 150ms',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.background = '#FFFFFF'; e.currentTarget.style.color = '#000000'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = '#000000'; e.currentTarget.style.color = '#FFFFFF'; }}
+        >[ Launch App ]</button>
       </Link>
     </nav>
-  )
+  );
 }
 
-function HeroButton({ children, primary }: { children: React.ReactNode; primary: boolean }) {
-  const [hovered, setHovered] = useState(false)
+/* ─── Hero ──────────────────────────────────── */
 
-  const base: React.CSSProperties = {
-    borderRadius: 0,
-    padding: '14px 32px',
-    fontSize: 14,
-    letterSpacing: '0.1em',
-    cursor: 'pointer',
-    transition: 'background 150ms, color 150ms, border-color 150ms',
-    fontWeight: 400,
-  }
+function ScrambleCTA({ text }: { text: string }) {
+  const [display, setDisplay] = useState(text);
+  const tiRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ivRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const style: React.CSSProperties = primary
-    ? {
-        ...base,
-        background: hovered ? '#DC2626' : '#ffffff',
-        color: hovered ? '#ffffff' : '#000000',
-        border: `1px solid ${hovered ? '#DC2626' : '#ffffff'}`,
-      }
-    : {
-        ...base,
-        background: 'transparent',
-        color: '#ffffff',
-        border: `1px solid ${hovered ? '#ffffff' : 'rgba(255,255,255,0.2)'}`,
-      }
+  const startScramble = () => {
+    const start = Date.now();
+    ivRef.current = setInterval(() => {
+      const p = Math.min((Date.now() - start) / 100, 1);
+      const locked = Math.floor(p * text.length);
+      setDisplay(
+        text.slice(0, locked) +
+        Array.from({ length: text.length - locked }, () =>
+          SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)]
+        ).join('')
+      );
+      if (p >= 1) { if (ivRef.current) clearInterval(ivRef.current); setDisplay(text); }
+    }, 20);
+  };
+  const stopScramble = () => {
+    if (ivRef.current) clearInterval(ivRef.current);
+    if (tiRef.current) clearTimeout(tiRef.current);
+    setDisplay(text);
+  };
 
   return (
-    <button
-      style={style}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {children}
-    </button>
-  )
+    <Link href="/app">
+      <button
+        onMouseEnter={startScramble}
+        onMouseLeave={stopScramble}
+        style={{
+          background: '#FFFFFF', color: '#000000', border: '1px solid #FFFFFF',
+          padding: '14px 48px', borderRadius: 0, cursor: 'pointer',
+          fontFamily: 'Courier New, monospace', fontSize: 13, letterSpacing: '0.15em',
+          transition: 'background 150ms, color 150ms', minWidth: 220,
+        }}
+      >{display}</button>
+    </Link>
+  );
 }
 
 function Hero() {
-  const [phase, setPhase] = useState(0)
-
-  useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 200)
-    const t2 = setTimeout(() => setPhase(2), 1000)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [])
-
-  const lines = [
-    'Finally, the price reflects',
-    'what people actually believe about the market.',
-  ]
+  const line1 = useScramble('Finally, the price reflects', 400);
+  const line2 = useScramble('what people actually believe about the market.', 500);
 
   return (
     <section style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 'clamp(2rem, 5vw, 4rem)',
-      paddingTop: '80px',
-      textAlign: 'center',
-      position: 'relative',
+      minHeight: '100vh', display: 'flex',
+      alignItems: 'center', justifyContent: 'center',
+      padding: 'clamp(2rem,5vw,4rem)', paddingTop: '80px',
+      position: 'relative', gap: '2rem',
     }}>
-      <div style={{
-        height: 1,
-        background: '#DC2626',
-        width: phase >= 1 ? 60 : 0,
-        transition: 'width 800ms ease-out',
-        marginBottom: '2rem',
-      }} />
-
-      <div style={{ maxWidth: 860 }}>
-        {lines.map((line, i) => (
-          <div
-            key={i}
-            style={{
-              opacity: phase >= 2 ? 1 : 0,
-              transform: phase >= 2 ? 'translateY(0)' : 'translateY(12px)',
-              transition: `opacity 400ms ease-out ${i * 120}ms, transform 400ms ease-out ${i * 120}ms`,
-              fontSize: 'clamp(2.4rem, 5.5vw, 5rem)',
-              fontWeight: 300,
-              letterSpacing: '-0.02em',
-              lineHeight: 1.1,
-              color: '#ffffff',
-            }}
-          >
-            {line}
-          </div>
-        ))}
+      {/* Left: text */}
+      <div style={{ flex: 1, maxWidth: 560 }}>
+        <div style={{ height: 1, background: '#FFFFFF', width: 48, marginBottom: '2.5rem' }} />
 
         <div style={{
-          opacity: phase >= 2 ? 1 : 0,
-          transform: phase >= 2 ? 'translateY(0)' : 'translateY(12px)',
-          transition: `opacity 400ms ease-out ${3 * 120}ms, transform 400ms ease-out ${3 * 120}ms`,
+          fontSize: 'clamp(2rem, 4vw, 4rem)', fontWeight: 300,
+          letterSpacing: '-0.02em', lineHeight: 1.15,
+          color: '#FFFFFF', fontFamily: 'Courier New, monospace',
+        }}>{line1}</div>
+        <div style={{
+          fontSize: 'clamp(2rem, 4vw, 4rem)', fontWeight: 300,
+          letterSpacing: '-0.02em', lineHeight: 1.15,
+          color: '#FFFFFF', fontFamily: 'Courier New, monospace',
+          marginBottom: '1.5rem',
+        }}>{line2}</div>
+
+        <p style={{
+          fontSize: 'clamp(1rem, 1.8vw, 1.25rem)',
+          fontWeight: 300,
+          fontStyle: 'italic',
+          color: '#9ca3af',
+          lineHeight: 1.6,
+          marginBottom: '2rem',
         }}>
-          <div style={{ height: 32 }} />
-          <p style={{
-            fontSize: 'clamp(1rem, 2vw, 1.25rem)',
-            fontWeight: 300,
-            fontStyle: 'italic',
-            color: '#9ca3af',
-            lineHeight: 1.6,
-          }}>
-            Not what they believe other traders believe.
-          </p>
+          You predict the event, not the traders.
+        </p>
 
-          <div style={{ height: 24 }} />
-          <p style={{
-            fontSize: '0.875rem',
-            letterSpacing: '0.05em',
-            color: '#6b7280',
-            lineHeight: 1.8,
-            maxWidth: 580,
-            margin: '0 auto',
-          }}>
-            (Because no one can see what others did —<br />
-            you predict the event, not the traders.<br />
-            Hence the most accurate prediction market to ever exist.)
-          </p>
+        {/* <p style={{
+          fontSize: 'clamp(0.82rem, 1.3vw, 0.95rem)', color: '#666666',
+          lineHeight: 1.8, margin: '1.5rem 0 2.5rem',
+          fontStyle: 'italic', maxWidth: 420,
+        }}>
+          (Because no one can see what others did —<br />
+          you predict the event, not the traders.<br />
+          Hence the most accurate prediction market to ever exist.)
+        </p> */}
 
-          <div style={{ height: 48 }} />
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/app">
-              <HeroButton primary>Enter the Market</HeroButton>
-            </Link>
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                borderRadius: 0,
-                padding: '14px 32px',
-                fontSize: 14,
-                letterSpacing: '0.1em',
-                cursor: 'pointer',
-                transition: 'all 150ms',
-                fontWeight: 400,
-                background: '#1f2937',
-                color: '#ffffff',
-                border: '1px solid #374151',
-                textDecoration: 'none',
-              }}
-              onMouseEnter={e => {
-                const el = e.currentTarget
-                el.style.background = '#111827'
-                el.style.borderColor = '#4b5563'
-                el.style.transform = 'scale(1.05)'
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget
-                el.style.background = '#1f2937'
-                el.style.borderColor = '#374151'
-                el.style.transform = 'scale(1)'
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{ display: 'flex', alignItems: 'center' }}>
-                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v 3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-              </svg>
-              Read the Architecture
-            </a>
-          </div>
-        </div>
+        <ScrambleCTA text="ENTER THE MARKET" />
       </div>
 
-      <div style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: '0.5px',
-        background: 'rgba(255,255,255,0.1)',
-      }} />
+      {/* Right: ASCII sphere */}
+      <div style={{ flexShrink: 0, opacity: 0.9 }}>
+        <AsciiSphere />
+      </div>
+
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '0.5px', background: '#333333' }} />
     </section>
-  )
+  );
 }
 
-function Ticker() {
-  const items = [
-    'Direction visible',
-    'Size visible',
-    'Timing visible',
-    'Wallet history permanent',
-    'Smart money identified',
-    'Position front-run',
-    'Conviction held back',
-    'Price corrupted',
-  ]
+/* ─── Problem Section ───────────────────────── */
 
-  const [paused, setPaused] = useState(false)
-  const content = [...items, ...items]
+const FLAW_ITEMS = [
+  'Direction visible',
+  // 'Size visible',
+  // 'Timing visible',
+  'Wallet history permanent',
+  'Smart money identified',
+  'Position front-run',
+  'Conviction held back',
+  // 'Price corrupted',
+];
 
+function RedactItem({ text, active, delay }: { text: string; active: boolean; delay: number }) {
   return (
-    <div
-      style={{ overflow: 'hidden', width: '100%', cursor: 'default' }}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      <div style={{
-        display: 'flex',
-        whiteSpace: 'nowrap',
-        animation: 'tickerScroll 30s linear infinite',
-        animationPlayState: paused ? 'paused' : 'running',
-      }}>
-        {content.map((item, i) => (
-          <span key={i} style={{ display: 'inline-flex', alignItems: 'center' }}>
-            <span style={{
-              fontSize: 'clamp(1.5rem, 3vw, 2.5rem)',
-              fontWeight: 300,
-              color: '#374151',
-              padding: '0 2rem',
-            }}>
-              {item}
-            </span>
-            <span style={{ color: '#DC2626', fontSize: 'clamp(1.2rem, 2.5vw, 2rem)' }}>|</span>
-          </span>
-        ))}
-      </div>
+    <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+      <span style={{
+        fontFamily: 'Courier New, monospace',
+        fontSize: 'clamp(1.1rem, 2.2vw, 1.6rem)',
+        fontWeight: 300,
+        color: active ? '#888888' : '#FFFFFF',
+        letterSpacing: '-0.01em',
+        transition: `color 200ms ${delay + 280}ms`,
+      }}>{text}</span>
+      <span style={{
+        position: 'absolute',
+        left: 0,
+        top: '50%',
+        height: '2px',
+        background: '#FFFFFF',
+        width: active ? '105%' : '0%',
+        transition: `width 280ms ease-in ${delay}ms`,
+        transform: 'translateY(-50%)',
+        pointerEvents: 'none',
+      }} />
     </div>
-  )
+  );
 }
 
 function SectionProblem() {
+  const { ref, inView } = useInView({ rootMargin: '-40% 0px -40% 0px' });
+
   return (
-    <section id="problem" style={{ padding: 'clamp(6rem, 10vw, 10rem) clamp(1.5rem, 6vw, 6rem)', background: '#080808' }}>
-      <Reveal>
-        <p style={{
-          fontFamily: "'Courier New', monospace",
-          fontSize: 11,
-          letterSpacing: '0.3em',
-          color: '#DC2626',
-          textTransform: 'uppercase',
-          marginBottom: '2.5rem',
-        }}>
+    <section id="problem" style={{ padding: 'clamp(5rem,9vw,9rem) clamp(1.5rem,4vw,3rem)', background: '#000000' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <p style={{ fontFamily: 'Courier New, monospace', fontSize: 11, letterSpacing: '0.3em', color: '#FFFFFF', textTransform: 'uppercase', marginBottom: '2.5rem' }}>
           The Problem
         </p>
 
-        <div style={{ maxWidth: 720, marginBottom: '5rem' }}>
-          <span style={{
-            display: 'block',
-            fontSize: 'clamp(2rem, 4.5vw, 3.8rem)',
-            fontWeight: 300,
-            letterSpacing: '-0.015em',
-            lineHeight: 1.2,
-            color: '#ffffff',
-          }}>
-            Prediction markets don't fail
-          </span>
-          <span style={{
-            display: 'block',
-            fontSize: 'clamp(2rem, 4.5vw, 3.8rem)',
-            fontWeight: 500,
-            letterSpacing: '-0.015em',
-            lineHeight: 1.15,
-            color: '#ffffff',
-          }}>
-            because people don't know things.
-          </span>
-          <span style={{
-            display: 'block',
-            fontSize: 'clamp(2rem, 4.5vw, 3.8rem)',
-            fontWeight: 300,
-            letterSpacing: '-0.015em',
-            lineHeight: 1.2,
-            color: '#6b7280',
-          }}>
-            They fail because knowing costs you.
-          </span>
+        <div style={{ marginBottom: '4rem' }}>
+          {['Prediction markets don\'t fail', 'because people don\'t know things.', 'They fail because knowing costs you.'].map((l, i) => (
+            <div key={i} style={{
+              fontSize: 'clamp(1.8rem, 4vw, 3.5rem)', fontWeight: i === 1 ? 500 : 300,
+              letterSpacing: '-0.015em', lineHeight: 1.2,
+              color: i === 2 ? '#666666' : '#FFFFFF',
+            }}>{l}</div>
+          ))}
         </div>
-      </Reveal>
 
-      <Reveal delay={100}>
-        <Ticker />
-      </Reveal>
+        <div ref={ref} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '4rem' }}>
+          {FLAW_ITEMS.map((item, i) => (
+            <RedactItem key={item} text={item} active={inView} delay={i * 80} />
+          ))}
+        </div>
 
-      <div style={{ height: 80 }} />
-
-      <Reveal delay={150}>
-        <div style={{ textAlign: 'center', maxWidth: 760, margin: '0 auto' }}>
+        <div style={{ maxWidth: 700 }}>
           <p style={{
-            fontSize: 'clamp(1.1rem, 2.2vw, 1.5rem)',
-            fontStyle: 'italic',
-            color: '#9ca3af',
-            lineHeight: 1.8,
-            marginBottom: '1.25rem',
+            fontFamily: 'Courier New, monospace', fontSize: 'clamp(0.9rem, 1.8vw, 1.1rem)',
+            fontStyle: 'italic', color: '#666666', lineHeight: 1.8, marginBottom: '1rem',
           }}>
-            "You don't pick the face you think is most beautiful.
-            You pick the face you think other judges will think is most beautiful."
+            "You don't pick the face you think is most beautiful. You pick the face you think other judges will think is most beautiful."
           </p>
-          <p style={{
-            fontFamily: "'Courier New', monospace",
-            fontSize: 12,
-            letterSpacing: '0.2em',
-            color: '#4b5563',
-            marginBottom: '2rem',
-          }}>
+          <p style={{ fontFamily: 'Courier New, monospace', fontSize: 11, letterSpacing: '0.2em', color: '#333333' }}>
             — JOHN MAYNARD KEYNES, 1936
           </p>
-          <p style={{ fontSize: '1rem', color: '#6b7280', lineHeight: 1.7 }}>
-            The <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>Keynesian beauty contest problem</span> — every prediction market since has had this. Nobody has structurally fixed it.
+          <p style={{
+            fontSize: 'clamp(0.85rem, 1.5vw, 1rem)', color: '#666666',
+            lineHeight: 1.8, marginTop: '2rem',
+          }}>
+            The <em style={{ fontStyle: 'italic', color: '#FFFFFF' }}>Keynesian beauty contest problem</em> — every prediction market since has had this. Nobody has structurally fixed it.
           </p>
         </div>
-      </Reveal>
+      </div>
     </section>
-  )
+  );
 }
+
+/* ─── The Fix Section ───────────────────────── */
 
 function SectionProof() {
   return (
-    <section id="proof" style={{ padding: 'clamp(6rem, 10vw, 10rem) clamp(1.5rem, 6vw, 6rem)', background: '#080808' }}>
-      <Reveal>
-        <p style={{
-          fontFamily: "'Courier New', monospace",
-          fontSize: 11,
-          letterSpacing: '0.3em',
-          color: '#DC2626',
-          textTransform: 'uppercase',
-          marginBottom: '2.5rem',
-        }}>
-          The Fix
-        </p>
-      </Reveal>
+    <section id="proof" style={{ padding: 'clamp(5rem,9vw,9rem) clamp(1.5rem,4vw,3rem)', background: '#000000' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <p style={{ fontFamily: 'Courier New, monospace', fontSize: 11, letterSpacing: '0.3em', color: '#FFFFFF', textTransform: 'uppercase', marginBottom: '2.5rem' }}>
+        The Fix
+      </p>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-        gap: '1.5rem',
-        maxWidth: 900,
-      }}>
-        <Reveal delay={0}>
-          <div style={{ background: '#111111', padding: '2rem', borderTop: '0.5px solid rgba(255,255,255,0.06)' }}>
-            <p style={{
-              fontFamily: "'Courier New', monospace",
-              fontSize: 11,
-              letterSpacing: '0.2em',
-              color: '#7f1d1d',
-              textTransform: 'uppercase',
-              marginBottom: '1.5rem',
-            }}>
-              Without Occult
-            </p>
-            <pre style={{
-              fontFamily: "'Courier New', monospace",
-              fontSize: 'clamp(0.7rem, 1.2vw, 0.8rem)',
-              color: '#9ca3af',
-              lineHeight: 2,
-              margin: 0,
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-            }}>{`trade hits the market
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        {/* Without */}
+        <div style={{ border: '1px solid #333333', padding: '2rem' }}>
+          <p style={{ fontFamily: 'Courier New, monospace', fontSize: 10, letterSpacing: '0.25em', color: '#666666', textTransform: 'uppercase', marginBottom: '1.5rem' }}>
+            Without Occult
+          </p>
+          <pre style={{
+            fontFamily: 'Courier New, monospace', fontSize: 'clamp(0.65rem, 1.1vw, 0.78rem)',
+            color: '#666666', lineHeight: 2, margin: 0, whiteSpace: 'pre-wrap',
+          }}>{`trade hits the market
 price: 62.5% → 62.9%
-direction: YES       `}<span style={{ color: '#DC2626' }}>{`← visible. immediately.`}</span>{`
-size: $862           `}<span style={{ color: '#DC2626' }}>{`← visible. immediately.`}</span>{`
+direction: YES       `}<span style={{ color: '#FFFFFF' }}>← visible. immediately.</span>{`
+size: $862           `}<span style={{ color: '#FFFFFF' }}>← visible. immediately.</span>{`
 wallet: permanent record
 your next bet: already being watched`}</pre>
-          </div>
-        </Reveal>
+        </div>
 
-        <Reveal delay={100}>
-          <div style={{ background: '#111111', padding: '2rem', borderTop: '0.5px solid #DC2626' }}>
-            <p style={{
-              fontFamily: "'Courier New', monospace",
-              fontSize: 11,
-              letterSpacing: 0.2,
-              color: '#9ca3af',
-              textTransform: 'uppercase',
-              marginBottom: '1.5rem',
-            }}>
-              With Occult
-            </p>
-            <pre style={{
-              fontFamily: "'Courier New', monospace",
-              fontSize: 'clamp(0.7rem, 1.2vw, 0.8rem)',
-              color: '#9ca3af',
-              lineHeight: 2,
-              margin: 0,
-              whiteSpace: 'pre-wrap',
-            }}>{`100 trades accumulate silently
+        {/* With */}
+        <div style={{ border: '1px solid #FFFFFF', padding: '2rem' }}>
+          <p style={{ fontFamily: 'Courier New, monospace', fontSize: 10, letterSpacing: '0.25em', color: '#FFFFFF', textTransform: 'uppercase', marginBottom: '1.5rem' }}>
+            With Occult
+          </p>
+          <pre style={{
+            fontFamily: 'Courier New, monospace', fontSize: 'clamp(0.65rem, 1.1vw, 0.78rem)',
+            color: '#FFFFFF', lineHeight: 2, margin: 0, whiteSpace: 'pre-wrap',
+          }}>{`100 trades accumulate silently
 price: 62.5% → 58.1%  ← one update. that's all.
-a bet happened. that's all anyone knows.
 
-`}<span style={{ color: '#DC2626' }}>{`✗ direction`}</span>{`
-`}<span style={{ color: '#DC2626' }}>{`✗ which trade moved it`}</span>{`
-`}<span style={{ color: '#DC2626' }}>{`✗ position history`}</span>{`
-`}<span style={{ color: '#DC2626' }}>{`✗ pool composition`}</span></pre>
-          </div>
-        </Reveal>
+`}<span style={{ animation: 'flash-encrypted 0.8s infinite' }}>[ENCRYPTED]</span>{` direction
+`}<span style={{ animation: 'flash-encrypted 0.8s infinite', animationDelay: '0.2s' }}>[ENCRYPTED]</span>{` pool composition
+`}<span style={{ animation: 'flash-encrypted 0.8s infinite', animationDelay: '0.4s' }}>[ENCRYPTED]</span>{` position history
+  `}<span style={{ animation: 'flash-encrypted 0.8s infinite', animationDelay: '0.6s' }}>[ENCRYPTED]</span>{` which trade moved it`}</pre>
+        </div>
+      </div>
       </div>
     </section>
-  )
+  );
+}
+
+/* ─── How It Works ──────────────────────────── */
+
+function StepItem({ number, title, body }: { number: string; title: string; body: string }) {
+  const { ref, inView } = useInView({ threshold: 0.3 });
+  const typed = useTypewriter(body, 15, inView);
+
+  return (
+    <div ref={ref} style={{ paddingLeft: 48, marginBottom: 60, position: 'relative' }}>
+      <p style={{ fontFamily: 'Courier New, monospace', fontSize: 11, color: '#FFFFFF', marginBottom: '0.5rem' }}>{number}</p>
+      <h3 style={{ fontSize: '1.2rem', fontWeight: 400, color: '#FFFFFF', marginBottom: '0.75rem', lineHeight: 1.3 }}>{title}</h3>
+      <p style={{ fontFamily: 'Courier New, monospace', fontSize: '0.82rem', color: '#666666', lineHeight: 1.9, minHeight: '3.5em' }}>
+        {typed.text}{!typed.done && inView ? <span style={{ animation: 'blink-cursor 0.2s steps(1) infinite' }}>_</span> : null}
+      </p>
+    </div>
+  );
 }
 
 function SectionHowItWorks() {
-  const [lineHeight, setLineHeight] = useState(0)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const lineRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    const obs = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          setTimeout(() => {
-            if (lineRef.current) {
-              setLineHeight(lineRef.current.scrollHeight)
-            }
-          }, 0)
-        }
-      },
-      { threshold: 0.2 }
-    )
-    obs.observe(container)
-    return () => obs.disconnect()
-  }, [])
-
   const steps = [
-    {
-      number: '01',
-      title: 'You encrypt your bet in the browser.',
-      body: 'Direction. Amount. Sealed before it leaves your device. The network never sees plaintext. Not even for a millisecond.',
-    },
-    {
-      number: '02',
-      title: 'It enters the pool. Silently.',
-      body: 'The pool updates homomorphically — addition on ciphertexts. The contract processes what it cannot read. No price movement. No signal. Nothing to trade against.',
-    },
-    {
-      number: '03',
-      title: 'Tens of trades later — one number surfaces.',
-      body: 'A single threshold decryption. The new probability, computed from the aggregate of everything that happened. Individual trades: permanently dissolved into the collective.',
-    },
-    {
-      number: '04',
-      title: 'Your direction never left your browser. The pool never spoke.',
-      body: 'On-chain record: a bet happened, from this address, at this time. That is the complete record. Forever.',
-      isLast: true,
-    },
-  ]
+    { number: '01', title: 'You encrypt your bet in the browser.', body: 'Direction. Amount. Sealed before it leaves your device. The network never sees plaintext. Not even for a millisecond.' },
+    { number: '02', title: 'It enters the pool. Silently.', body: 'The pool updates homomorphically — addition on ciphertexts. The contract processes what it cannot read. No price movement. No signal. Nothing to trade against.' },
+    { number: '03', title: 'Tens of trades later — one number surfaces.', body: 'A single threshold decryption. The new probability, computed from the aggregate of everything that happened. Individual trades: permanently dissolved into the collective.' },
+    { number: '04', title: 'Your direction never left your browser. The pool never spoke.', body: 'On-chain record: a bet happened, from this address, at this time. That is the complete record. Forever.' },
+  ];
 
   return (
-    <section id="how-it-works" style={{ padding: 'clamp(6rem, 10vw, 10rem) clamp(1.5rem, 6vw, 6rem)', background: '#0d0d0d' }}>
-      <Reveal>
-        <p style={{
-          fontFamily: "'Courier New', monospace",
-          fontSize: 11,
-          letterSpacing: '0.3em',
-          color: '#DC2626',
-          textTransform: 'uppercase',
-          marginBottom: '2.5rem',
-        }}>
+    <section id="how-it-works" style={{ padding: 'clamp(5rem,9vw,9rem) clamp(1.5rem,4vw,3rem)', background: '#000000', borderTop: '1px solid #333333' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <p style={{ fontFamily: 'Courier New, monospace', fontSize: 11, letterSpacing: '0.3em', color: '#FFFFFF', textTransform: 'uppercase', marginBottom: '2.5rem' }}>
           The Mechanism
         </p>
-        <div style={{
-          fontSize: 'clamp(2rem, 4.5vw, 3.8rem)',
-          fontWeight: 300,
-          letterSpacing: '-0.015em',
-          lineHeight: 1.15,
-          color: '#ffffff',
-          marginBottom: '6rem',
-        }}>
+        <div style={{ fontSize: 'clamp(1.8rem, 4vw, 3.5rem)', fontWeight: 300, letterSpacing: '-0.015em', color: '#FFFFFF', marginBottom: '4rem' }}>
           How It Works
         </div>
-      </Reveal>
 
-      <div ref={containerRef} style={{ maxWidth: 560, position: 'relative' }}>
-        <div
-          ref={lineRef}
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            width: '1px',
-            background: 'rgba(255,255,255,0.08)',
-            height: lineHeight ? '100%' : 0,
-            transition: 'height 800ms ease-out',
-            display: 'none',
-          }}
-          className="desktop-line"
-        />
-
-        {steps.map((step, i) => (
-          <Reveal key={step.number} delay={i * 150}>
-            <div style={{ paddingLeft: '48px', marginBottom: i < steps.length - 1 ? '64px' : 0, position: 'relative' }}>
-              <p style={{
-                fontFamily: "'Courier New', monospace",
-                fontSize: 11,
-                color: '#DC2626',
-                marginBottom: '0.5rem',
-              }}>
-                {step.number}
-              </p>
-              <h3 style={{
-                fontSize: '1.25rem',
-                fontWeight: step.isLast ? 500 : 400,
-                color: '#ffffff',
-                marginBottom: '0.75rem',
-                lineHeight: 1.3,
-              }}>
-                {step.title}
-              </h3>
-              <p style={{
-                fontSize: '0.9rem',
-                color: '#6b7280',
-                lineHeight: 1.8,
-              }}>
-                {step.body}
-              </p>
-            </div>
-          </Reveal>
-        ))}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 80px' }}>
+          {steps.map(s => <StepItem key={s.number} {...s} />)}
+        </div>
       </div>
-
-      <style>{`
-        @media (min-width: 768px) {
-          .desktop-line { display: block !important; }
-          .mobile-bullet { display: none !important; }
-        }
-        @media (max-width: 767px) {
-          .desktop-line { display: none !important; }
-          .mobile-bullet { display: inline-block !important; margin-right: 0.5rem; color: #DC2626; }
-        }
-      `}</style>
     </section>
-  )
+  );
+}
+
+/* ─── Fhenix Section ────────────────────────── */
+
+function FhenixTitle() {
+  const { ref, inView } = useInView({ threshold: 0.3 });
+  const text = useScramble('Built on Fhenix CoFHE', 900, inView);
+  return (
+    <div ref={ref} style={{ fontSize: 'clamp(1.5rem, 3vw, 2.5rem)', fontWeight: 300, letterSpacing: '-0.01em', color: '#FFFFFF', marginBottom: '1.25rem' }}>
+      {text}
+    </div>
+  );
 }
 
 function SectionFhenix() {
   return (
-    <section id="fhenix" style={{ padding: 'clamp(6rem, 10vw, 10rem) clamp(1.5rem, 6vw, 6rem)', background: '#080808' }}>
-      <Reveal>
-        <p style={{
-          fontFamily: "'Courier New', monospace",
-          fontSize: 11,
-          letterSpacing: '0.3em',
-          color: '#DC2626',
-          textTransform: 'uppercase',
-          marginBottom: '2.5rem',
-        }}>
-          Foundation
-        </p>
+    <section id="fhenix" style={{ padding: 'clamp(5rem,9vw,9rem) clamp(1.5rem,4vw,3rem)', background: '#000000', borderTop: '1px solid #333333' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <p style={{ fontFamily: 'Courier New, monospace', fontSize: 11, letterSpacing: '0.3em', color: '#FFFFFF', textTransform: 'uppercase', marginBottom: '2.5rem' }}>
+        Foundation
+      </p>
 
-        <div style={{
-          fontSize: 'clamp(1.8rem, 3.5vw, 3rem)',
-          fontWeight: 300,
-          letterSpacing: '-0.01em',
-          marginBottom: '2rem',
-          color: '#ffffff',
-        }}>
-          Built on <span style={{ color: '#00D4D4' }}>Fhenix</span> CoFHE
-        </div>
-
-        <p style={{
-          fontSize: 'clamp(0.95rem, 1.8vw, 1.1rem)',
-          fontWeight: 300,
-          color: '#6b7280',
-          lineHeight: 1.8,
-          maxWidth: 600,
-          marginBottom: '2rem',
-        }}>
+      <div style={{ border: '1px solid #333333', padding: '2rem 2.5rem', maxWidth: 700 }}>
+        <FhenixTitle />
+        <p style={{ fontFamily: 'Courier New, monospace', fontSize: '0.82rem', color: '#666666', lineHeight: 1.9, marginBottom: '1.5rem' }}>
           Fully Homomorphic Encryption — the only cryptographic primitive where computation happens on ciphertexts. No hardware trust. No interactivity required. Mathematically guaranteed.
         </p>
-
         <a
           href="https://fhenix.io"
           target="_blank"
           rel="noopener noreferrer"
           style={{
-            fontFamily: "'Courier New', monospace",
-            fontSize: 13,
-            letterSpacing: '0.1em',
-            color: '#00D4D4',
-            textDecoration: 'none',
-            borderBottom: '0.5px solid #00D4D4',
-            paddingBottom: 2,
-            transition: 'opacity 150ms',
+            fontFamily: 'Courier New, monospace', fontSize: 12, letterSpacing: '0.1em',
+            color: '#FFFFFF', textDecoration: 'none', borderBottom: '1px solid #666666',
+            paddingBottom: 2, transition: 'border-color 150ms',
           }}
-          onMouseEnter={e => (e.currentTarget.style.opacity = '0.7')}
-          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-        >
-          fhenix.io →
-        </a>
-      </Reveal>
+          onMouseEnter={e => (e.currentTarget.style.borderColor = '#FFFFFF')}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = '#666666')}
+        >fhenix.io →</a>
+      </div>
+      </div>
     </section>
-  )
+  );
 }
 
-function CTAButton() {
-  const [hovered, setHovered] = useState(false)
-  return (
-    <Link href="/app">
-      <button
-        style={{
-          background: hovered ? '#DC2626' : '#ffffff',
-          color: hovered ? '#ffffff' : '#000000',
-          border: `1px solid ${hovered ? '#DC2626' : '#ffffff'}`,
-          borderRadius: 0,
-          padding: '14px 48px',
-          fontSize: 14,
-          letterSpacing: '0.1em',
-          cursor: 'pointer',
-          transition: 'background 150ms, color 150ms, border-color 150ms',
-          fontWeight: 400,
-        }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      >
-        Enter the Market
-      </button>
-    </Link>
-  )
-}
+/* ─── CTA Section ───────────────────────────── */
 
 function SectionCTA() {
+  const { ref, inView } = useInView({ threshold: 0.3 });
+  const line = useScramble('The market is open.', 700, inView);
+
   return (
     <section style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 'clamp(4rem, 8vw, 8rem) clamp(1.5rem, 6vw, 6rem)',
-      textAlign: 'center',
-      background: '#080808',
-      borderTop: '0.5px solid rgba(255,255,255,0.06)',
+      minHeight: '80vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: 'clamp(4rem,8vw,8rem) clamp(1.5rem,6vw,6rem)',
+      textAlign: 'center', background: '#000000', borderTop: '1px solid #333333',
     }}>
-      <Reveal>
-        <div style={{
-          fontSize: 'clamp(3rem, 7vw, 6rem)',
-          fontWeight: 300,
-          letterSpacing: '-0.02em',
-          lineHeight: 1.1,
-          color: '#ffffff',
-          marginBottom: '3rem',
-        }}>
-          The market is open.
-        </div>
+      <div ref={ref} style={{
+        fontSize: 'clamp(2.5rem, 6vw, 5.5rem)', fontWeight: 300,
+        letterSpacing: '-0.02em', color: '#FFFFFF',
+        fontFamily: 'Courier New, monospace', marginBottom: '2.5rem',
+      }}>{line}</div>
 
-        <CTAButton />
+      <ScrambleCTA text="ENTER THE MARKET" />
 
-        <p style={{
-          fontFamily: "'Courier New', monospace",
-          fontSize: 12,
-          letterSpacing: '0.2em',
-          color: '#374151',
-          marginTop: '2.5rem',
-        }}>
-          OCCULT MARKETS · ARBITRUM SEPOLIA · WAVE 2
-        </p>
-      </Reveal>
+      <p style={{
+        fontFamily: 'Courier New, monospace', fontSize: 11,
+        letterSpacing: '0.2em', color: '#333333', marginTop: '2.5rem',
+      }}>OCCULT MARKETS · ARBITRUM SEPOLIA · WAVE 2</p>
     </section>
-  )
+  );
 }
 
-export default function App() {
+/* ─── Root ──────────────────────────────────── */
+
+export default function LandingPage() {
   return (
-    <div style={{
-      background: '#080808',
-      color: '#ffffff',
-      minHeight: '100vh',
-      overflowX: 'hidden',
-      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    }}>
+    <div style={{ background: '#000000', color: '#FFFFFF', minHeight: '100vh', overflowX: 'hidden' }}>
       <style>{`
         html { scroll-behavior: smooth; }
-        @keyframes heartbeat {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
-        }
-        @keyframes tickerScroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        pre { tab-size: 2; }
-        a { transition: opacity 150ms; }
+        @keyframes blink-cursor { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+        @keyframes flash-encrypted { 0%,100%{opacity:1} 50%{opacity:0.2} }
       `}</style>
       <Nav />
       <Hero />
@@ -850,5 +486,5 @@ export default function App() {
       <SectionFhenix />
       <SectionCTA />
     </div>
-  )
+  );
 }
