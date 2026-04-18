@@ -92,8 +92,7 @@ contract OccultMarket {
 
     function placeBet(
         uint256     marketId,
-        InEbool  memory encryptedDirection,
-        InEuint64 memory encryptedAmount
+        InEbool  memory encryptedDirection
     ) external payable {
         Market storage m = markets[marketId];
         require(marketId < marketCount,  "Invalid market");
@@ -101,7 +100,8 @@ contract OccultMarket {
         require(msg.value > 0,           "No ETH sent");
 
         ebool  dir = FHE.asEbool(encryptedDirection);
-        euint64 amt = FHE.asEuint64(encryptedAmount);
+        uint64 gweiAmt = uint64(msg.value / GWEI);
+        euint64 amt = FHE.asEuint64(gweiAmt);
         FHE.allowThis(dir);
         FHE.allowThis(amt);
 
