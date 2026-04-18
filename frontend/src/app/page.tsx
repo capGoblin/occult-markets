@@ -344,7 +344,7 @@ price: 62.5% → 58.1%  ← one update. that's all.
 `}<span style={{ animation: 'flash-encrypted 0.8s infinite' }}>[ENCRYPTED]</span>{` direction
 `}<span style={{ animation: 'flash-encrypted 0.8s infinite', animationDelay: '0.2s' }}>[ENCRYPTED]</span>{` pool composition
 `}<span style={{ animation: 'flash-encrypted 0.8s infinite', animationDelay: '0.4s' }}>[ENCRYPTED]</span>{` position history
-  `}<span style={{ animation: 'flash-encrypted 0.8s infinite', animationDelay: '0.6s' }}>[ENCRYPTED]</span>{` which trade moved it`}</pre>
+  `}<span style={{ animation: 'flash-encrypted 0.8s infinite', animationDelay: '0.6s' }}>[ENCRYPTED]</span>{`which trade moved it`}</pre>
         </div>
       </div>
       </div>
