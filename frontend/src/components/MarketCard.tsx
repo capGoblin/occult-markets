@@ -117,19 +117,24 @@ export function MarketCard({ marketId }: Props) {
     return () => { if (glitchRef.current) clearTimeout(glitchRef.current); };
   }, []);
 
-  /* DECRYPTING... scramble — active when update is running or priceUpdatePending */
-  const isDecryptingActive = updateStep !== "idle";
+  /* DECRYPTING... scramble — active when actively processing or pending */
+  const isDecryptingActive = updateStep === "requesting" || updateStep === "publishing";
+  const isPriceUpdatePending = market ? market[6] : false;
+  
   useEffect(() => {
     const CHARS = '!@#%^&*0123456789ABCDEF/\\[]{}';
     const target = 'DECRYPTING...';
-    if (!isDecryptingActive) { setDecryptDisplay(target); return; }
+    if (!isDecryptingActive && !(updateStep === "idle" && isPriceUpdatePending)) { 
+      setDecryptDisplay(target); 
+      return; 
+    }
     scrambleRef.current = setInterval(() => {
       setDecryptDisplay(Array.from(target, (c) =>
-        Math.random() < 0.35 ? CHARS[Math.floor(Math.random() * CHARS.length)] : c
+        Math.random() < 0.25 ? CHARS[Math.floor(Math.random() * CHARS.length)] : c
       ).join(''));
-    }, 80);
+    }, 200);
     return () => { if (scrambleRef.current) clearInterval(scrambleRef.current); setDecryptDisplay(target); };
-  }, [isDecryptingActive]);
+  }, [isDecryptingActive, isPriceUpdatePending]);
 
   if (!market) {
     return <div className="market-card loading"><div className="skeleton" /></div>;
@@ -301,8 +306,8 @@ export function MarketCard({ marketId }: Props) {
               <span className="update-caret">&gt;</span>
               <span className="update-text">
                 {updateStep === "requesting"
-                  ? <><TypedText text="requesting threshold key..." /> {updateElapsed > 0 && <span style={{ color: '#666666' }}>[{updateElapsed}s]</span>}</>
-                  : "requesting threshold key..."}
+                  ? <><TypedText text="ACTION REQUIRED: Confirm TX 1/2 in wallet (requesting threshold key...)" /> {updateElapsed > 0 && <span style={{ color: '#666666' }}>[{updateElapsed}s]</span>}</>
+                  : "TX 1/2 Confirmed (key requested)."}
               </span>
             </div>
           )}
@@ -311,8 +316,8 @@ export function MarketCard({ marketId }: Props) {
               <span className="update-caret">&gt;</span>
               <span className="update-text">
                 {updateStep === "publishing"
-                  ? <TypedText text="proof received — publishing..." />
-                  : "proof received — publishing..."}
+                  ? <TypedText text="ACTION REQUIRED: Sign prompt to decrypt, then confirm TX 2/2 (publishing proof...)" />
+                  : "TX 2/2 Confirmed (proof published)."}
               </span>
             </div>
           )}
